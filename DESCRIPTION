@@ -1,13 +1,13 @@
 Package: OrdinalScale
-Title: What the Package Does (One Line, Title Case)
+Title: This package provides a set of functions that properly handle ordinal scale level data.
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Koji",
+           family = "Kosugi",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           email = "kosugitti@gmail.com",
+           comment = c(ORCID = "0000-0001-5816-0099"))
+Description: This package provides a set of functions that properly handle ordinal scale level data.
 License: CCBY-4.0
 Encoding: UTF-8
 LazyData: true

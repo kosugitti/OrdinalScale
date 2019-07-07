@@ -1,20 +1,18 @@
 #' Dual Sacling for Oridinal Data
 #'
 #' @param dat A matrix or data frame
-#' @param eps A criteria whether it reached conversion. Default value is 10e-5
-#' @param iter.max A muximum numbers of iterations
 #' @export
 
 
 DualScalingOrdinal <- function(dat) {
-  dat.dm <- make.dominance(dat)  # Call dominance function
+  dat.dm <- make.dominance(dat) # Call dominance function
   # 与えられたデータの隔離
   nc <- ncol(dat.dm)
   nr <- nrow(dat.dm)
   cname <- colnames(dat.dm)
   rname <- rownames(dat.dm)
   # 抽出する次元数
-  dm <- min(nc-1, nr)
+  dm <- min(nc - 1, nr)
   # 出力するベクトルの準備
   normed.col <- matrix(ncol = nc, nrow = dm)
   projected.col <- matrix(ncol = nc, nrow = dm)
@@ -24,25 +22,25 @@ DualScalingOrdinal <- function(dat) {
 
   tmp <- dat.dm
   # 標準形からの固有値分解
-  D <- diag(nc*(nc-1),ncol=nc,nrow=nc)
-  Dn <-diag(nr*(nr-1),ncol=nr,nrow=nr)
+  D <- diag(nc * (nc - 1), ncol = nc, nrow = nc)
+  Dn <- diag(nr * (nr - 1), ncol = nr, nrow = nr)
   Dhlf <- sqrt(D)
-  Dm_hlf <- diag(diag(1/Dhlf))
-  C1 <- t(tmp)%*%(tmp)/(nr*nc*(nc-1)^2)
+  Dm_hlf <- diag(diag(1 / Dhlf))
+  C1 <- t(tmp) %*% (tmp) / (nr * nc * (nc - 1)^2)
   EigenSystem <- eigen(C1)
   # 有効次元までの固有値抽出
   eigenvalue <- EigenSystem$values[1:dm]
   singular <- sqrt(eigenvalue)
   # 固有ベクトルの抽出
-  vec <- EigenSystem$vectors[,1:dm]
+  vec <- EigenSystem$vectors[, 1:dm]
   # 列スコア
-  nu <- vec*sqrt(nc)
+  nu <- vec * sqrt(nc)
   # 投影された行スコア
-  pv <- tmp %*% nu / (nc*(nc-1))
+  pv <- tmp %*% nu / (nc * (nc - 1))
   # 行スコア
-  nv <- pv /rep(1,nr) %*% t(singular)
+  nv <- pv / rep(1, nr) %*% t(singular)
   # 投影された列スコア
-  pu <- nu * rep(1,nc)%*%t(singular)
+  pu <- nu * rep(1, nc) %*% t(singular)
 
   delta_k <- singular^2 / sum(singular^2) * 100
   cum_delta_k <- c()
@@ -63,9 +61,9 @@ DualScalingOrdinal <- function(dat) {
   rownames(projected.col) <- dimName
 
   # Style the output
-  res = t(cbind(singular,singular^2,delta_k,cum_delta_k))
+  res <- t(cbind(singular, singular^2, delta_k, cum_delta_k))
   colnames(res) <- dimName
-  rownames(res) <- c("singular value","eigen value","contribution","cumulative contribution")
+  rownames(res) <- c("singular value", "eigen value", "contribution", "cumulative contribution")
 
   normed.col <- t(normed.col)
   normed.row <- t(normed.row)

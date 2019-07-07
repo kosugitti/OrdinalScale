@@ -33,21 +33,21 @@ DualScalingMA <- function(dat, eps = 1e-10, iter.max = 1000) {
   for (i in 1:dm) {
     FLG <- FALSE
     iter <- 0
-    u <- rnorm(nc)
+    u <- stats::rnorm(nc)
     tmp <- 0
     while (FLG == FALSE) {
       # algorithm
       v <- u %*% t(dat.tmp)
       v <- v / mg.row
       av <- as.vector((mg.row %*% t(v)) / mg.t)
-      #v <- v - av * rep(1, nr)
+      # v <- v - av * rep(1, nr)
       gy <- max(abs(v))
       v <- v / gy
 
       u <- v %*% dat.tmp
       u <- u / mg.col
       av <- as.vector((mg.col %*% t(u)) / mg.t)
-      #u <- u - (av * rep(1, nc))
+      # u <- u - (av * rep(1, nc))
       gx <- max(abs(u))
       u <- u / gx
 
@@ -121,9 +121,9 @@ DualScalingMA <- function(dat, eps = 1e-10, iter.max = 1000) {
   rownames(projected.col) <- dimName
 
   # Style the output
-  res = t(cbind(singular,singular^2,delta_k,cum_delta_k))
+  res <- t(cbind(singular, singular^2, delta_k, cum_delta_k))
   colnames(res) <- dimName
-  rownames(res) <- c("singular value","eigen value","contribution","cumulative contribution")
+  rownames(res) <- c("singular value", "eigen value", "contribution", "cumulative contribution")
 
   normed.col <- t(normed.col)
   normed.row <- t(normed.row)

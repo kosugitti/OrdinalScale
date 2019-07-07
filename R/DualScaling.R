@@ -1,8 +1,6 @@
 #' Dual Sacling with EigenDecomposition
 #'
 #' @param dat A matrix or data frame
-#' @param eps A criteria whether it reached conversion. Default value is 10e-5
-#' @param iter.max A muximum numbers of iterations
 #' @export
 
 
@@ -26,7 +24,7 @@ DualScaling <- function(dat) {
   D <- diag(apply(tmp, 2, sum))
   Dn <- diag(apply(tmp, 1, sum))
   Dhlf <- sqrt(D)
-  Dm_hlf <- diag(diag(1/Dhlf))
+  Dm_hlf <- diag(diag(1 / Dhlf))
   C0 <- Dm_hlf %*% t(tmp) %*% solve(Dn) %*% tmp %*% Dm_hlf
   C1 <- C0 - (Dhlf %*% matrix(1, nrow = nrow(tmp), ncol = ncol(tmp)) %*% Dhlf) / sum(tmp)
   EigenSystem <- eigen(C1)
