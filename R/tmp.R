@@ -13,8 +13,8 @@ rownames(Height.Blood) <- c("Hi-pre","Normal","Low-pre")
 
 
 
-
-d.data <- dominance(ord.data)
+source("R/make_dominance.R")
+d.data <- make.dominance(ord.data)
 dat.tmp <- d.data
 
 #dat <- Height.Blood
@@ -46,7 +46,7 @@ MRA <- function(dat.tmp){
   mg.t   <- nr * nc * (nc-1)
   u <- rnorm(nc)
   tmp <- 0
-  for( ppp in 1:100){
+  for( ppp in 1:1000){
     #algorithm
     v <- u %*% t(dat.tmp)
     v <- v / mg.row
@@ -54,8 +54,6 @@ MRA <- function(dat.tmp){
     #      v <- v - (av * rep(1,nr))
     gy <- max(abs(v))
     v <- v/gy
-    v
-    gy
 
     u <- v %*% dat.tmp
     u <- u / mg.col
@@ -63,8 +61,6 @@ MRA <- function(dat.tmp){
     #      u <- u - (av *rep(1,nc))
     gx <- max(abs(u))
     u <- u/gx
-    u
-    gx
   }
 
   eta2 <- gx * gy  # Correlation ratio

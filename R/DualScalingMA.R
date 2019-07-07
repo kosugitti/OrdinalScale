@@ -1,4 +1,4 @@
-#' Dual Sacling for Oridinal Data
+#' Dual Sacling with Mutual Averages
 #'
 #' @param dat A matrix or data frame
 #' @param eps A criteria whether it reached conversion. Default value is 10e-5
@@ -6,27 +6,25 @@
 #' @export
 
 
-DualScalingOrdinal <- function(dat, eps = 1e-10, iter.max = 1000) {
-  dat.dm <- make.dominance(dat)  # Call dominance function
-  nc <- NCOL(dat.dm)
-  nr <- NROW(dat.dm)
-  cname <- colnames(dat.dm)
-  rname <- rownames(dat.dm)
-  mg.row <- rep(nc * (nc-1),NROW(dat.dm)) # Adjusted marginals
-  mg.col <- rep(nr * (nc-1),NCOL(dat.dm)) #
-  mg.t   <- nr * nc * (nc-1)              #
-  print(mg.row)
-  dm <- min(nc-1, nr)
+DualScalingMA <- function(dat, eps = 1e-10, iter.max = 1000) {
+  nc <- ncol(dat)
+  nr <- nrow(dat)
+  cname <- colnames(dat)
+  rname <- rownames(dat)
+  mg.col <- colSums(dat)
+  mg.row <- rowSums(dat)
+  mg.t <- sum(mg.row)
+  dm <- min(nc, nr) - 1
   normed.col <- matrix(ncol = nc, nrow = dm)
   projected.col <- matrix(ncol = nc, nrow = dm)
   normed.row <- matrix(ncol = nr, nrow = dm)
   projected.row <- matrix(ncol = nr, nrow = dm)
   singular <- c()
 
-  dat.tmp <- dat.dm
+  dat.tmp <- dat
   # 0-exp
-  for (i in 1:NROW(dat)) {
-    for (j in 1:NCOL(dat)) {
+  for (i in 1:nrow(dat)) {
+    for (j in 1:ncol(dat)) {
       dat.tmp[i, j] <- dat.tmp[i, j] - (mg.row[i] * mg.col[j] / mg.t)
     }
   }
@@ -42,14 +40,14 @@ DualScalingOrdinal <- function(dat, eps = 1e-10, iter.max = 1000) {
       v <- u %*% t(dat.tmp)
       v <- v / mg.row
       av <- as.vector((mg.row %*% t(v)) / mg.t)
-      v <- v - av * rep(1, nr)
+      #v <- v - av * rep(1, nr)
       gy <- max(abs(v))
       v <- v / gy
 
       u <- v %*% dat.tmp
       u <- u / mg.col
       av <- as.vector((mg.col %*% t(u)) / mg.t)
-      u <- u - (av * rep(1, nc))
+      #u <- u - (av * rep(1, nc))
       gx <- max(abs(u))
       u <- u / gx
 
