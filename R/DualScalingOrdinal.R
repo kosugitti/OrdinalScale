@@ -6,93 +6,44 @@
 #' @export
 
 
-DualScalingOrdinal <- function(dat, eps = 1e-10, iter.max = 1000) {
+DualScalingOrdinal <- function(dat) {
   dat.dm <- make.dominance(dat)  # Call dominance function
-  nc <- NCOL(dat.dm)
-  nr <- NROW(dat.dm)
+  # 与えられたデータの隔離
+  nc <- ncol(dat.dm)
+  nr <- nrow(dat.dm)
   cname <- colnames(dat.dm)
   rname <- rownames(dat.dm)
-  mg.row <- rep(nc * (nc-1),NROW(dat.dm)) # Adjusted marginals
-  mg.col <- rep(nr * (nc-1),NCOL(dat.dm)) #
-  mg.t   <- nr * nc * (nc-1)              #
-  print(mg.row)
+  # 抽出する次元数
   dm <- min(nc-1, nr)
+  # 出力するベクトルの準備
   normed.col <- matrix(ncol = nc, nrow = dm)
   projected.col <- matrix(ncol = nc, nrow = dm)
   normed.row <- matrix(ncol = nr, nrow = dm)
   projected.row <- matrix(ncol = nr, nrow = dm)
   singular <- c()
 
-  dat.tmp <- dat.dm
-  # 0-exp
-  for (i in 1:NROW(dat)) {
-    for (j in 1:NCOL(dat)) {
-      dat.tmp[i, j] <- dat.tmp[i, j] - (mg.row[i] * mg.col[j] / mg.t)
-    }
-  }
+  tmp <- dat.dm
+  # 標準形からの固有値分解
+  D <- diag(nc*(nc-1),ncol=nc,nrow=nc)
+  Dn <-diag(nr*(nr-1),ncol=nr,nrow=nr)
+  Dhlf <- sqrt(D)
+  Dm_hlf <- diag(diag(1/Dhlf))
+  C1 <- t(tmp)%*%(tmp)/(nr*nc*(nc-1)^2)
+  EigenSystem <- eigen(C1)
+  # 有効次元までの固有値抽出
+  eigenvalue <- EigenSystem$values[1:dm]
+  singular <- sqrt(eigenvalue)
+  # 固有ベクトルの抽出
+  vec <- EigenSystem$vectors[,1:dm]
+  # 列スコア
+  nu <- vec*sqrt(nc)
+  # 投影された行スコア
+  pv <- tmp %*% nu / (nc*(nc-1))
+  # 行スコア
+  nv <- pv /rep(1,nr) %*% t(singular)
+  # 投影された列スコア
+  pu <- nu * rep(1,nc)%*%t(singular)
 
-  # 1-n
-  for (i in 1:dm) {
-    FLG <- FALSE
-    iter <- 0
-    u <- rnorm(nc)
-    tmp <- 0
-    while (FLG == FALSE) {
-      # algorithm
-      v <- u %*% t(dat.tmp)
-      v <- v / mg.row
-      av <- as.vector((mg.row %*% t(v)) / mg.t)
-      v <- v - av * rep(1, nr)
-      gy <- max(abs(v))
-      v <- v / gy
-
-      u <- v %*% dat.tmp
-      u <- u / mg.col
-      av <- as.vector((mg.col %*% t(u)) / mg.t)
-      u <- u - (av * rep(1, nc))
-      gx <- max(abs(u))
-      u <- u / gx
-
-      # conv. check
-      if (abs(tmp - gx) < eps) {
-        FLG <- TRUE
-      } else {
-        tmp <- gx
-      }
-      if (iter > iter.max) {
-        FLG <- TRUE
-      } else {
-        iter <- iter + 1
-      }
-    }
-
-
-    if (u[which.max(abs(u))] < 0) u * -1
-    if (v[which.max(abs(v))] < 0) v * -1
-
-    eta2 <- gx * gy # Correlation ratio
-    nu.c <- sqrt(sum(mg.col) / mg.col %*% t(u^2)) # multiplied constant
-    nv.c <- sqrt(sum(mg.row) / mg.row %*% t(v^2))
-    nu <- nu.c %*% u # normed u
-    nv <- nv.c %*% v # normed v
-    pu <- nu * sqrt(eta2)
-    pv <- nv * sqrt(eta2)
-
-    if (iter > iter.max) {
-      cat("Warning::did not converge.")
-    } else {
-      singular[i] <- sqrt(eta2)
-      normed.col[i, ] <- nu
-      normed.row[i, ] <- nv
-      projected.col[i, ] <- pu
-      projected.row[i, ] <- pv
-    }
-
-    # residual Matrix
-    dat.tmp <- dat.tmp - (mg.row %*% t(mg.col) / mg.t) * ((sqrt(eta2) * t(nv) %*% nu))
-  }
-
-  # Correct dims
   delta_k <- singular^2 / sum(singular^2) * 100
   cum_delta_k <- c()
   cum_delta_k[1] <- delta_k[1]
@@ -100,23 +51,12 @@ DualScalingOrdinal <- function(dat, eps = 1e-10, iter.max = 1000) {
     cum_delta_k[i] <- cum_delta_k[i - 1] + delta_k[i]
   }
 
-  dm.cr <- which.max(cum_delta_k)
-  if (dm.cr < dm) {
-    singular <- singular[-(dm.cr + 1:dm)]
-    delta_k <- delta_k[-(dm.cr + 1:dm)]
-    cum_delta_k <- cum_delta_k[-(dm.cr + 1:dm)]
-    normed.col <- normed.col[-(dm.cr + 1:dm), ]
-    normed.row <- normed.row[-(dm.cr + 1:dm), ]
-    projected.row <- projected.row[-(dm.cr + 1:dm), ]
-    projected.col <- projected.col[-(dm.cr + 1:dm), ]
-  }
-
   # var names
   colnames(normed.col) <- cname
   colnames(projected.col) <- cname
   colnames(normed.row) <- rname
   colnames(projected.row) <- rname
-  dimName <- paste0("Dim", 1:dm.cr)
+  dimName <- paste0("Dim", 1:dm)
   rownames(normed.row) <- dimName
   rownames(normed.col) <- dimName
   rownames(projected.row) <- dimName
@@ -136,14 +76,14 @@ DualScalingOrdinal <- function(dat, eps = 1e-10, iter.max = 1000) {
 
   return(list(
     result = res,
-    ndims = dm.cr,
+    ndims = dm,
     singularValue = singular,
     eigenValue = singular^2,
     delta = delta_k,
     cumulativeDelta = cum_delta_k,
-    NormedCol = normed.col,
-    NormedRow = normed.row,
-    ProjectedCol = projected.col,
-    ProjectedRow = projected.row
+    NormedCol = nu,
+    NormedRow = nv,
+    ProjectedCol = pu,
+    ProjectedRow = pv
   ))
 }
