@@ -33,7 +33,7 @@ DualScalingOrdinal <- function(dat) {
   singular <- sqrt(eigenvalue)
   # 固有ベクトルの抽出
   vec <- EigenSystem$vectors[, 1:dm]
-  # 列スコア
+  # 列スコア...固有値分解のコードはノルム１に企画化した固有ベクトルを返すので，列重みでサイズを整える。今回の列重みは選択肢の数である。
   nu <- vec * sqrt(nc)
   # 投影された行スコア
   pv <- tmp %*% nu / (nc * (nc - 1))
