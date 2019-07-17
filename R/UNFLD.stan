@@ -33,5 +33,6 @@ model{
   for(n in 1:N){
     theta[n] ~ normal(0,1);
   }
+
   sig ~ student_t(4,0,5);
 }

@@ -1,6 +1,8 @@
 library(tidyverse)
 library(rstan)
 options(mc.cores = parallel::detectCores())
+library(ltm)
+library(smacof)
 
 # Purpose -----------------------------------------------------------------
 
@@ -8,7 +10,6 @@ options(mc.cores = parallel::detectCores())
 ## 2.多次元展開法
 ## 3.GRMの確率モデル
 ## 4.GPCMの確率モデル
-
 
 
 # Dual Scaling ------------------------------------------------------------
@@ -115,7 +116,7 @@ print(fitLc,pars='a')
 ### MDSのように象限を固定してやるべきか？？
 
 # GRM ---------------------------------------------------------------------
-library(ltm)
+
 GRMmodel <- stan_model("R/GRM.stan")
 
 
@@ -215,3 +216,49 @@ traceplot(fit_D,pars=c("a[5,1]","a[5,2]"))
 GPCMD <- stan_model("R/GPCMD.stan")
 fit_pd <- sampling(GPCMD,datalist)
 print(fit_pd,pars=c('a','b'))
+
+
+# モデル比較 -------------------------------------------------------------------
+
+## Sample Data
+dat <- Science[c(1, 3, 4, 7)]
+dat %>%
+  mutate(ID = row_number()) %>%
+  tidyr::gather(key, val, -ID) %>%
+  mutate(key = ifelse(key=="Comfort",1,
+                      ifelse(key=="Work",2,
+                             ifelse(key=="Future",3,4)))) %>%
+  mutate(val = ifelse(val=="strongly disagree",1,
+                      ifelse(val=="disagree",2,
+                             ifelse(val=="agree",3,4))))  %>% arrange(ID)-> dat.long
+datalist <- list(
+  L = NROW(dat.long), C = max(dat.long$val), M = max(dat.long$key), N = max(dat.long$ID),
+  Pid = dat.long$ID, Jid = dat.long$key, val = dat.long$val, D= 1
+)
+
+dat.long %>% tidyr::spread(key,val) %>% dplyr::select(-ID) -> dat
+
+GRM <- stan_model("R/GRM.stan")
+GPCM <- stan_model("R/GPCM.stan")
+UNFLD <- stan_model("R/UNFLD.stan")
+source("R/DualScaling.R")
+source("R/make_dominance.R")
+source("R/DualScalingOrdinal.R")
+
+result.DS <- DualScalingOrdinal(dat)
+result.unfolding <- smacof::unfolding(dat,1)
+result.grm <- grm(dat,IRT.param = TRUE)
+result.GRM <- sampling(GRM,datalist)
+result.GPCM <- sampling(GPCM,datalist)
+result.UNFLD <- sampling(UNFLD,datalist)
+
+## GRMは多次元にしたらラベルスイッチング
+## UNFLDは制約のかけ方に問題？収束が悪い。vbだと初期値に依存してる？答えが毎回違う。
+
+result.DS$NormedCol
+result.grm
+result.unfolding
+result.unfolding$conf.col
+result.GRM %>% print(pars=c('a','b'))
+result.GPCM %>% print(pars=c('a','b'))
+result.UNFLD %>% print(pars=c('a'))
